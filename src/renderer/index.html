@@ -3,7 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <title>Electron</title>
-    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    
+    <!--
+      内容安全策略 (Content Security Policy, CSP)
+      
+      用于增强应用安全性，限制可加载的资源来源：
+      - default-src 'self': 默认只允许加载同源资源
+      - script-src 'self': JavaScript 只能来自应用本身
+      - style-src 'self' 'unsafe-inline': 样式可以来自应用本身和内联样式
+      - img-src 'self' data:: 图片可以来自应用本身和 data: URI
+      
+      这些限制可以有效防止 XSS 攻击和恶意代码注入
+      参考：https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
+    -->
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
@@ -11,7 +23,16 @@
   </head>
 
   <body>
+    <!-- React 应用挂载点 -->
     <div id="root"></div>
+    
+    <!-- 
+      渲染进程入口脚本
+      
+      type="module" 表示使用 ES 模块加载方式
+      开发环境：由 Vite 开发服务器处理，支持热更新
+      生产环境：由 electron-builder 打包后加载
+    -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
