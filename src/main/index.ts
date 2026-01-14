@@ -29,7 +29,7 @@ function createWindow(): void {
     autoHideMenuBar: true, // 自动隐藏菜单栏（Windows/Linux 平台）
     ...(process.platform === 'linux' ? { icon } : {}), // Linux 平台设置窗口图标
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'), // 预加载脚本路径，在渲染进程加载前执行
+      preload: join(__dirname, '../preload/index.mjs'), // 预加载脚本路径，在渲染进程加载前执行
       sandbox: false // 禁用沙箱模式，允许 preload 脚本访问 Node.js API
     }
   })
