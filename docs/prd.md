@@ -49,27 +49,105 @@
 - **数据存储**：**electron-store**。
   - _理由_：简单的 JSON 文件存储配置。不需要后端数据库，完全 Local-first。
 
-### 5. 数据结构 (Simplified Schema)
+### 5. 数据结构 (Data Schema - Backend Design)
 
-由于是 Local-first，这是存储在本地 JSON 中的结构：
+由于是 Local-first，这是存储在本地 JSON 中的结构。设计原则：
 
-```json
+- **单一数据源**：所有状态集中管理，避免数据不一致
+- **状态机驱动**：会话状态明确，便于恢复和审计
+- **向后兼容**：预留扩展字段，为未来功能铺路
+
+```typescript
 {
-  "user_settings": {
-    "strict_mode": true, // 是否开启强制拉回焦点
-    "sound_enabled": true
+  // 用户偏好设置
+  "settings": {
+    "strictMode": true,           // 是否强制拉回焦点（核心开关）
+    "soundEnabled": true,          // 音效开关
+    "emergencyExitDuration": 10,   // 紧急退出按键时长（秒）
+    "quickTimers": [15, 30, 60],   // 快速计时器预设（分钟）
+    "version": "1.0.0"             // 配置版本号（用于数据迁移）
   },
+
+  // 允许列表配置
+  "allowlist": {
+    "apps": [
+      {
+        "id": "com.microsoft.VSCode",  // Bundle ID（macOS）或进程名（Windows）
+        "name": "Visual Studio Code",
+        "isPrimary": true,              // 是否为主要聚焦应用
+        "addedAt": "2023-10-27T10:00:00Z"
+      }
+      // MVP 阶段限制最多 2 个 App
+    ]
+  },
+
+  // 当前会话状态（运行时状态）
+  "currentSession": {
+    "id": "uuid-v4",                  // 会话唯一标识
+    "targetAppId": "com.microsoft.VSCode",
+    "durationMinutes": 45,
+    "startedAt": "2023-10-27T10:00:00Z",
+    "status": "active",                // 状态机：idle | active | paused | completed | aborted
+    "remainingSeconds": 2700,          // 剩余秒数（实时更新）
+    "violations": [                    // 违规记录（用于统计，MVP 可选）
+      {
+        "timestamp": "2023-10-27T10:05:12Z",
+        "attemptedApp": "WeChat",
+        "action": "force_refocus"      // 采取的动作
+      }
+    ]
+  },
+
+  // 历史会话记录
   "history": [
     {
-      "id": "uuid",
-      "app_name": "VS Code",
-      "duration_minutes": 45,
-      "completed_at": "2023-10-27T10:00:00Z",
-      "status": "completed" // or "aborted"
+      "id": "uuid-v4",
+      "targetAppId": "com.microsoft.VSCode",
+      "targetAppName": "VS Code",      // 冗余字段，方便展示
+      "durationMinutes": 45,
+      "actualMinutes": 43,              // 实际完成时长（可能提前退出）
+      "startedAt": "2023-10-27T10:00:00Z",
+      "completedAt": "2023-10-27T10:43:00Z",
+      "status": "completed",            // completed | aborted | emergency_exit
+      "violationsCount": 3              // 违规次数汇总
     }
-  ]
+  ],
+
+  // 元数据（系统级）
+  "meta": {
+    "schemaVersion": 1,                // 数据结构版本号
+    "lastUpdatedAt": "2023-10-27T10:43:00Z",
+    "installDate": "2023-10-20T08:00:00Z"
+  }
 }
 ```
+
+#### 关键设计决策
+
+| 字段/结构          | 设计理由                                                               |
+| ------------------ | ---------------------------------------------------------------------- |
+| `currentSession`   | 独立存储运行时状态，防止异常退出后无法恢复未完成会话                   |
+| `violations` 数组  | 为后续"专注度报告"功能预留，MVP 可不展示但可收集数据                   |
+| `actualMinutes`    | 区分"承诺时长"和"实际时长"，用于判断是否提前中止                       |
+| `schemaVersion`    | 当数据结构升级时，可通过此字段做数据迁移（例如 1.0 -> 2.0）            |
+| App 使用 Bundle ID | macOS 的进程可能重名，Bundle ID 是唯一标识符；Windows 可用进程完整路径 |
+
+#### 状态机定义（Session Status）
+
+```
+idle → active → completed
+  ↓              ↓
+  └──→ aborted ←┘
+       ↓
+  emergency_exit
+```
+
+- **idle**：无活动会话
+- **active**：正在专注中
+- **paused**：（预留，MVP 不实现暂停功能）
+- **completed**：正常完成倒计时
+- **aborted**：用户主动中止（非紧急退出）
+- **emergency_exit**：通过长按 Esc 强制退出
 
 ### 6. 商业模式与定价 (Monetization Strategy)
 

@@ -15,7 +15,7 @@
   - [x] 配置 ESLint + Prettier (针对 Electron/React 最佳实践).
   - [x] 确立目录结构：分离 `Main Process` (系统交互) 与 `Renderer Process` (UI).
 - [ ] **State Management & Persistence**
-  - [ ] 集成 `electron-store` 用于持久化用户配置 (Allowlist, Settings).
+  - [x] 集成 `electron-store` 用于持久化用户配置 (Allowlist, Settings).
   - [ ] 定义 JSON Schema (参考 PRD Section 5).
   - [ ] 封装 `SettingsManager` 类，并在 Main Process 中单例运行。
 - [ ] **IPC Bridge Design**
