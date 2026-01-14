@@ -30,17 +30,23 @@ interface Settings {
   showTrayIcon: boolean
 }
 
-export function useStore() {
+export function useStore(): {
+  allowlist: string[]
+  settings: Settings
+  addToAllowlist: (appName: string) => Promise<void>
+  removeFromAllowlist: (appName: string) => Promise<void>
+  updateSettings: (partial: Partial<Settings>) => Promise<void>
+} {
   const [allowlist, setAllowlist] = useState<string[]>([])
   const [settings, setSettings] = useState<Settings>({
-    defaultDuration: 30,
+    defaultDuration: 25,
     soundEnabled: true,
     showTrayIcon: true
   })
 
   // 初始化加载配置
   useEffect(() => {
-    const loadConfig = async () => {
+    const loadConfig = async (): Promise<void> => {
       const [loadedAllowlist, loadedSettings] = await Promise.all([
         window.api.store.get<string[]>('allowlist'),
         window.api.store.get<Settings>('settings')
@@ -52,20 +58,20 @@ export function useStore() {
   }, [])
 
   // 更新 Allowlist
-  const addToAllowlist = async (appName: string) => {
+  const addToAllowlist = async (appName: string): Promise<void> => {
     const updated = [...allowlist, appName]
     await window.api.store.set('allowlist', updated)
     setAllowlist(updated)
   }
 
-  const removeFromAllowlist = async (appName: string) => {
+  const removeFromAllowlist = async (appName: string): Promise<void> => {
     const updated = allowlist.filter((name) => name !== appName)
     await window.api.store.set('allowlist', updated)
     setAllowlist(updated)
   }
 
   // 更新 Settings
-  const updateSettings = async (partial: Partial<Settings>) => {
+  const updateSettings = async (partial: Partial<Settings>): Promise<void> => {
     const updated = { ...settings, ...partial }
     await window.api.store.set('settings', updated)
     setSettings(updated)
