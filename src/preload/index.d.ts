@@ -14,6 +14,16 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 
 /**
+ * Store API 接口定义
+ */
+interface StoreAPI {
+  get: <T>(key: string) => Promise<T>
+  set: (key: string, value: unknown) => Promise<void>
+  delete: (key: string) => Promise<void>
+  clear: () => Promise<void>
+}
+
+/**
  * 扩展全局 Window 接口
  *
  * 声明 window 对象上挂载的自定义属性
@@ -34,16 +44,10 @@ declare global {
     /**
      * 自定义 API 对象
      *
-     * 在 preload/index.ts 中定义的自定义功能
-     * 类型为 unknown，在实际项目中应该定义具体的接口类型
-     *
-     * 建议改为：
-     * api: {
-     *   readConfig: () => Promise<Config>
-     *   saveData: (data: Data) => Promise<void>
-     *   onUpdate: (callback: (data: UpdateData) => void) => void
-     * }
+     * 提供类型安全的配置持久化接口
      */
-    api: unknown
+    api: {
+      store: StoreAPI
+    }
   }
 }

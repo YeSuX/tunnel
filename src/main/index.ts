@@ -13,6 +13,7 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { store } from './store'
 
 /**
  * 创建主窗口
@@ -79,6 +80,16 @@ app.whenReady().then(() => {
   // 监听来自渲染进程的 'ping' 消息，并在控制台输出 'pong'
   // 这是主进程与渲染进程通信的典型模式
   ipcMain.on('ping', () => console.log('pong'))
+
+  // Store IPC handlers
+  ipcMain.handle('store:get', (_event, key: string) => store.get(key as keyof typeof store.store))
+  ipcMain.handle('store:set', (_event, key: string, value: unknown) =>
+    store.set(key as keyof typeof store.store, value)
+  )
+  ipcMain.handle('store:delete', (_event, key: string) =>
+    store.delete(key as keyof typeof store.store)
+  )
+  ipcMain.handle('store:clear', () => store.clear())
 
   // 创建主窗口
   createWindow()

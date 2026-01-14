@@ -14,24 +14,23 @@
  * - 预加载脚本允许我们选择性地、安全地暴露特定功能给渲染进程
  */
 
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 /**
  * 自定义 API 对象
  *
- * 在这里定义需要暴露给渲染进程的自定义功能
- * 例如：
- * const api = {
- *   // 读取配置文件
- *   readConfig: () => ipcRenderer.invoke('read-config'),
- *   // 保存数据
- *   saveData: (data) => ipcRenderer.invoke('save-data', data),
- *   // 监听主进程事件
- *   onUpdate: (callback) => ipcRenderer.on('update', callback)
- * }
+ * 暴露 electron-store 的类型安全接口给渲染进程
  */
-const api = {}
+const api = {
+  store: {
+    get: <T>(key: string): Promise<T> => ipcRenderer.invoke('store:get', key),
+    set: (key: string, value: unknown): Promise<void> =>
+      ipcRenderer.invoke('store:set', key, value),
+    delete: (key: string): Promise<void> => ipcRenderer.invoke('store:delete', key),
+    clear: (): Promise<void> => ipcRenderer.invoke('store:clear')
+  }
+}
 
 /**
  * 根据上下文隔离状态选择不同的 API 暴露方式
