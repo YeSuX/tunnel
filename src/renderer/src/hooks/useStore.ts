@@ -12,9 +12,9 @@
  *   return (
  *     <div>
  *       <input
- *         type="number"
- *         value={settings.defaultDuration}
- *         onChange={(e) => updateSettings({ defaultDuration: Number(e.target.value) })}
+ *         type="checkbox"
+ *         checked={settings.strictMode}
+ *         onChange={(e) => updateSettings({ strictMode: e.target.checked })}
  *       />
  *     </div>
  *   )
@@ -23,50 +23,89 @@
  */
 
 import { useState, useEffect } from 'react'
+import type {
+  StoreSchema,
+  AllowlistApp,
+  CurrentSession,
+  HistorySession
+} from '../../../shared/types'
 
-interface Settings {
-  defaultDuration: number
-  soundEnabled: boolean
-  showTrayIcon: boolean
-}
+// 从 StoreSchema 中提取 Settings 类型
+type Settings = StoreSchema['settings']
+type Allowlist = StoreSchema['allowlist']
 
 export function useStore(): {
-  allowlist: string[]
+  // 白名单应用列表
+  allowlist: AllowlistApp[]
+  // 用户设置
   settings: Settings
-  addToAllowlist: (appName: string) => Promise<void>
-  removeFromAllowlist: (appName: string) => Promise<void>
+  // 当前会话
+  currentSession: CurrentSession | null
+  // 历史记录
+  history: HistorySession[]
+  // 白名单操作
+  addToAllowlist: (app: AllowlistApp) => Promise<void>
+  removeFromAllowlist: (appId: string) => Promise<void>
+  // 设置操作
   updateSettings: (partial: Partial<Settings>) => Promise<void>
+  // 会话操作
+  updateCurrentSession: (session: CurrentSession | null) => Promise<void>
 } {
-  const [allowlist, setAllowlist] = useState<string[]>([])
+  const [allowlist, setAllowlist] = useState<AllowlistApp[]>([])
   const [settings, setSettings] = useState<Settings>({
-    defaultDuration: 25,
+    strictMode: true,
     soundEnabled: true,
-    showTrayIcon: true
+    emergencyExitDuration: 10,
+    quickTimers: [15, 30, 60],
+    version: '1.0.0'
   })
+  const [currentSession, setCurrentSession] = useState<CurrentSession | null>(null)
+  const [history, setHistory] = useState<HistorySession[]>([])
 
   // 初始化加载配置
   useEffect(() => {
     const loadConfig = async (): Promise<void> => {
-      const [loadedAllowlist, loadedSettings] = await Promise.all([
-        window.api.store.get<string[]>('allowlist'),
-        window.api.store.get<Settings>('settings')
+      const [loadedAllowlist, loadedSettings, loadedSession, loadedHistory] = await Promise.all([
+        window.api.store.get<Allowlist>('allowlist'),
+        window.api.store.get<Settings>('settings'),
+        window.api.store.get<CurrentSession | null>('currentSession'),
+        window.api.store.get<HistorySession[]>('history')
       ])
-      setAllowlist(loadedAllowlist)
-      setSettings(loadedSettings)
+
+      // 默认值，确保旧数据也有新字段
+      const defaultSettings: Settings = {
+        strictMode: true,
+        soundEnabled: true,
+        emergencyExitDuration: 10,
+        quickTimers: [15, 30, 60],
+        version: '1.0.0'
+      }
+
+      // 合并配置：默认值 + 已保存的值
+      const mergedSettings: Settings = {
+        ...defaultSettings,
+        ...loadedSettings
+      }
+
+      setAllowlist(loadedAllowlist?.apps || [])
+      setSettings(mergedSettings)
+      setCurrentSession(loadedSession)
+      setHistory(loadedHistory || [])
     }
     loadConfig()
   }, [])
 
-  // 更新 Allowlist
-  const addToAllowlist = async (appName: string): Promise<void> => {
-    const updated = [...allowlist, appName]
-    await window.api.store.set('allowlist', updated)
+  // 白名单操作：添加应用
+  const addToAllowlist = async (app: AllowlistApp): Promise<void> => {
+    const updated: AllowlistApp[] = [...allowlist, app]
+    await window.api.store.set('allowlist', { apps: updated })
     setAllowlist(updated)
   }
 
-  const removeFromAllowlist = async (appName: string): Promise<void> => {
-    const updated = allowlist.filter((name) => name !== appName)
-    await window.api.store.set('allowlist', updated)
+  // 白名单操作：移除应用
+  const removeFromAllowlist = async (appId: string): Promise<void> => {
+    const updated = allowlist.filter((app) => app.id !== appId)
+    await window.api.store.set('allowlist', { apps: updated })
     setAllowlist(updated)
   }
 
@@ -77,11 +116,20 @@ export function useStore(): {
     setSettings(updated)
   }
 
+  // 更新当前会话
+  const updateCurrentSession = async (session: CurrentSession | null): Promise<void> => {
+    await window.api.store.set('currentSession', session)
+    setCurrentSession(session)
+  }
+
   return {
     allowlist,
     settings,
+    currentSession,
+    history,
     addToAllowlist,
     removeFromAllowlist,
-    updateSettings
+    updateSettings,
+    updateCurrentSession
   }
 }
