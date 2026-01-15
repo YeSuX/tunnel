@@ -32,7 +32,6 @@ import type {
 
 // 从 StoreSchema 中提取 Settings 类型
 type Settings = StoreSchema['settings']
-type Allowlist = StoreSchema['allowlist']
 
 export function useStore(): {
   // 白名单应用列表
@@ -65,11 +64,12 @@ export function useStore(): {
   // 初始化加载配置
   useEffect(() => {
     const loadConfig = async (): Promise<void> => {
+      // 类型安全：返回类型根据 key 自动推断
       const [loadedAllowlist, loadedSettings, loadedSession, loadedHistory] = await Promise.all([
-        window.api.store.get<Allowlist>('allowlist'),
-        window.api.store.get<Settings>('settings'),
-        window.api.store.get<CurrentSession | null>('currentSession'),
-        window.api.store.get<HistorySession[]>('history')
+        window.api.store.get('allowlist'),
+        window.api.store.get('settings'),
+        window.api.store.get('currentSession'),
+        window.api.store.get('history')
       ])
 
       // 默认值，确保旧数据也有新字段

@@ -3,6 +3,43 @@
  * 供主进程和渲染进程共同使用
  */
 
+// ============ Store API 类型 ============
+
+/**
+ * 类型安全的 Store API 接口
+ *
+ * 通过泛型约束确保 key 和 value 的类型匹配，
+ * 避免运行时因类型不匹配导致的错误。
+ */
+export interface TypedStoreAPI {
+  /**
+   * 获取指定 key 的值
+   * @param key - StoreSchema 的顶层 key
+   * @returns 对应 key 的值
+   */
+  get: <K extends keyof StoreSchema>(key: K) => Promise<StoreSchema[K]>
+
+  /**
+   * 设置指定 key 的值
+   * @param key - StoreSchema 的顶层 key
+   * @param value - 对应 key 的值类型
+   */
+  set: <K extends keyof StoreSchema>(key: K, value: StoreSchema[K]) => Promise<void>
+
+  /**
+   * 删除指定 key
+   * @param key - StoreSchema 的顶层 key
+   */
+  delete: <K extends keyof StoreSchema>(key: K) => Promise<void>
+
+  /**
+   * 清空所有配置（重置为默认值）
+   */
+  clear: () => Promise<void>
+}
+
+// ============ 业务类型定义 ============
+
 /**
  * 会话状态枚举
  */

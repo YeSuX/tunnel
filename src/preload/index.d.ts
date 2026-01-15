@@ -12,16 +12,7 @@
  */
 
 import { ElectronAPI } from '@electron-toolkit/preload'
-
-/**
- * Store API 接口定义
- */
-interface StoreAPI {
-  get: <T>(key: string) => Promise<T>
-  set: (key: string, value: unknown) => Promise<void>
-  delete: (key: string) => Promise<void>
-  clear: () => Promise<void>
-}
+import type { TypedStoreAPI } from '../shared/types'
 
 /**
  * 扩展全局 Window 接口
@@ -44,10 +35,30 @@ declare global {
     /**
      * 自定义 API 对象
      *
-     * 提供类型安全的配置持久化接口
+     * 提供类型安全的配置持久化接口和事件订阅能力
      */
     api: {
-      store: StoreAPI
+      /**
+       * Store API - 类型安全的配置读写
+       */
+      store: TypedStoreAPI
+
+      /**
+       * 订阅主进程推送的事件
+       *
+       * @param channel - IPC 通道名称
+       * @param callback - 事件回调函数
+       * @returns 取消订阅的函数
+       *
+       * @example
+       * ```ts
+       * const unsubscribe = window.api.on('session:tick:push', (remaining) => {
+       *   setRemainingSeconds(remaining)
+       * })
+       * return () => unsubscribe()
+       * ```
+       */
+      on: <T = unknown>(channel: string, callback: (data: T) => void) => () => void
     }
   }
 }

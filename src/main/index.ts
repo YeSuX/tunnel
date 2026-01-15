@@ -14,6 +14,8 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { store } from './store'
+import { IPC_CHANNELS } from '../shared/ipc'
+import type { StoreSchema } from '../shared/types'
 
 /**
  * 创建主窗口
@@ -81,15 +83,27 @@ app.whenReady().then(() => {
   // 这是主进程与渲染进程通信的典型模式
   ipcMain.on('ping', () => console.log('pong'))
 
-  // Store IPC handlers
-  ipcMain.handle('store:get', (_event, key: string) => store.get(key as keyof typeof store.store))
-  ipcMain.handle('store:set', (_event, key: string, value: unknown) =>
-    store.set(key as keyof typeof store.store, value)
+  // Store IPC handlers - 类型安全的配置读写
+  ipcMain.handle(
+    IPC_CHANNELS.STORE_GET,
+    <K extends keyof StoreSchema>(_event: Electron.IpcMainInvokeEvent, key: K) => store.get(key)
   )
-  ipcMain.handle('store:delete', (_event, key: string) =>
-    store.delete(key as keyof typeof store.store)
+
+  ipcMain.handle(
+    IPC_CHANNELS.STORE_SET,
+    <K extends keyof StoreSchema>(
+      _event: Electron.IpcMainInvokeEvent,
+      key: K,
+      value: StoreSchema[K]
+    ) => store.set(key, value)
   )
-  ipcMain.handle('store:clear', () => store.clear())
+
+  ipcMain.handle(
+    IPC_CHANNELS.STORE_DELETE,
+    <K extends keyof StoreSchema>(_event: Electron.IpcMainInvokeEvent, key: K) => store.delete(key)
+  )
+
+  ipcMain.handle(IPC_CHANNELS.STORE_CLEAR, () => store.clear())
 
   // 创建主窗口
   createWindow()

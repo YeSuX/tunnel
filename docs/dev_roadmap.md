@@ -18,9 +18,9 @@
   - [x] 集成 `electron-store` 用于持久化用户配置 (Allowlist, Settings).
   - [x] 定义 JSON Schema (参考 PRD Section 5).
   - [x] 封装 `SettingsManager` 类，并在 Main Process 中单例运行（咱不需要实现）。
-- [ ] **IPC Bridge Design**
-  - [ ] 定义类型安全的 IPC 通道 (`IPC_CHANNELS`).
-  - [ ] 实现 `preload` 脚本，暴露受限 API 给渲染进程 (Context Isolation).
+- [x] **IPC Bridge Design**
+  - [x] 定义类型安全的 IPC 通道 (`IPC_CHANNELS`).
+  - [x] 实现 `preload` 脚本，暴露受限 API 给渲染进程 (Context Isolation).
 
 ## ⚔️ Phase 2: Core Mechanics - "The Enforcer" (核心机制验证)
 

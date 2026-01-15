@@ -16,19 +16,57 @@
 
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import { IPC_CHANNELS } from '../shared/ipc'
+import type { StoreSchema } from '../shared/types'
 
 /**
  * 自定义 API 对象
  *
- * 暴露 electron-store 的类型安全接口给渲染进程
+ * 暴露类型安全的接口给渲染进程
+ * - store: 配置持久化操作
+ * - on: 订阅主进程推送的事件（用于 Session 状态同步等）
  */
 const api = {
+  /**
+   * Store API - 类型安全的配置读写
+   */
   store: {
-    get: <T>(key: string): Promise<T> => ipcRenderer.invoke('store:get', key),
-    set: (key: string, value: unknown): Promise<void> =>
-      ipcRenderer.invoke('store:set', key, value),
-    delete: (key: string): Promise<void> => ipcRenderer.invoke('store:delete', key),
-    clear: (): Promise<void> => ipcRenderer.invoke('store:clear')
+    get: <K extends keyof StoreSchema>(key: K): Promise<StoreSchema[K]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.STORE_GET, key),
+
+    set: <K extends keyof StoreSchema>(key: K, value: StoreSchema[K]): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.STORE_SET, key, value),
+
+    delete: <K extends keyof StoreSchema>(key: K): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.STORE_DELETE, key),
+
+    clear: (): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.STORE_CLEAR)
+  },
+
+  /**
+   * 订阅主进程推送的事件
+   *
+   * @param channel - IPC 通道名称
+   * @param callback - 事件回调函数
+   * @returns 取消订阅的函数
+   *
+   * @example
+   * ```ts
+   * // 订阅 Session 倒计时更新
+   * const unsubscribe = window.api.on('session:tick:push', (remaining) => {
+   *   setRemainingSeconds(remaining)
+   * })
+   * // 组件卸载时取消订阅
+   * return () => unsubscribe()
+   * ```
+   */
+  on: <T = unknown>(channel: string, callback: (data: T) => void): (() => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, data: T): void => callback(data)
+    ipcRenderer.on(channel, listener)
+    // 返回取消订阅函数
+    return () => {
+      ipcRenderer.removeListener(channel, listener)
+    }
   }
 }
 
