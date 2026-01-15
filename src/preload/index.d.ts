@@ -12,7 +12,31 @@
  */
 
 import { ElectronAPI } from '@electron-toolkit/preload'
-import type { TypedStoreAPI } from '../shared/types'
+import type {
+  TypedStoreAPI,
+  WindowInfo,
+  RunningApp,
+  FocusChangeEvent,
+  BoundsChangeEvent
+} from '../shared/types'
+
+/**
+ * Window Monitor API 类型
+ */
+export interface WindowMonitorAPI {
+  /** 获取当前焦点窗口信息 */
+  getActive: () => Promise<WindowInfo | null>
+  /** 获取运行中的应用列表 */
+  getRunningApps: () => Promise<RunningApp[]>
+  /** 开始焦点监控 */
+  startFocusWatch: () => Promise<void>
+  /** 停止焦点监控 */
+  stopFocusWatch: () => Promise<void>
+  /** 开始追踪目标窗口位置 */
+  startBoundsTrack: (windowId: number) => Promise<void>
+  /** 停止位置追踪 */
+  stopBoundsTrack: () => Promise<void>
+}
 
 /**
  * 扩展全局 Window 接口
@@ -44,6 +68,11 @@ declare global {
       store: TypedStoreAPI
 
       /**
+       * Window Monitor API - 窗口监控功能
+       */
+      window: WindowMonitorAPI
+
+      /**
        * 订阅主进程推送的事件
        *
        * @param channel - IPC 通道名称
@@ -62,3 +91,6 @@ declare global {
     }
   }
 }
+
+// 导出类型供其他模块使用
+export type { FocusChangeEvent, BoundsChangeEvent }

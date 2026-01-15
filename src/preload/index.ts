@@ -17,7 +17,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { IPC_CHANNELS } from '../shared/ipc'
-import type { StoreSchema } from '../shared/types'
+import type { StoreSchema, WindowInfo, RunningApp } from '../shared/types'
 
 /**
  * 自定义 API 对象
@@ -41,6 +41,31 @@ const api = {
       ipcRenderer.invoke(IPC_CHANNELS.STORE_DELETE, key),
 
     clear: (): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.STORE_CLEAR)
+  },
+
+  /**
+   * Window Monitor API - 窗口监控功能
+   */
+  window: {
+    /** 获取当前焦点窗口信息 */
+    getActive: (): Promise<WindowInfo | null> => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_GET_ACTIVE),
+
+    /** 获取运行中的应用列表 */
+    getRunningApps: (): Promise<RunningApp[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WINDOW_GET_RUNNING_APPS),
+
+    /** 开始焦点监控 */
+    startFocusWatch: (): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_START_FOCUS_WATCH),
+
+    /** 停止焦点监控 */
+    stopFocusWatch: (): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_STOP_FOCUS_WATCH),
+
+    /** 开始追踪目标窗口位置 */
+    startBoundsTrack: (windowId: number): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WINDOW_START_BOUNDS_TRACK, windowId),
+
+    /** 停止位置追踪 */
+    stopBoundsTrack: (): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_STOP_BOUNDS_TRACK)
   },
 
   /**

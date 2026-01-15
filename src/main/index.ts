@@ -16,6 +16,7 @@ import icon from '../../resources/icon.png?asset'
 import { store } from './store'
 import { IPC_CHANNELS } from '../shared/ipc'
 import type { StoreSchema } from '../shared/types'
+import { windowMonitor } from './services/WindowMonitor'
 
 /**
  * 创建主窗口
@@ -104,6 +105,42 @@ app.whenReady().then(() => {
   )
 
   ipcMain.handle(IPC_CHANNELS.STORE_CLEAR, () => store.clear())
+
+  // ============ Window Monitor IPC handlers ============
+
+  // 获取当前焦点窗口
+  ipcMain.handle(IPC_CHANNELS.WINDOW_GET_ACTIVE, () => windowMonitor.getActiveWindow())
+
+  // 获取运行中的应用列表
+  ipcMain.handle(IPC_CHANNELS.WINDOW_GET_RUNNING_APPS, () => windowMonitor.getRunningApps())
+
+  // 开始焦点监控
+  ipcMain.handle(IPC_CHANNELS.WINDOW_START_FOCUS_WATCH, (event) => {
+    const webContents = event.sender
+    windowMonitor.startFocusWatch((focusEvent) => {
+      // 通过 IPC 推送焦点变化事件到渲染进程
+      webContents.send(IPC_CHANNELS.WINDOW_FOCUS_CHANGE_PUSH, focusEvent)
+    })
+  })
+
+  // 停止焦点监控
+  ipcMain.handle(IPC_CHANNELS.WINDOW_STOP_FOCUS_WATCH, () => {
+    windowMonitor.stopFocusWatch()
+  })
+
+  // 开始目标窗口位置追踪
+  ipcMain.handle(IPC_CHANNELS.WINDOW_START_BOUNDS_TRACK, (event, windowId: number) => {
+    const webContents = event.sender
+    windowMonitor.startBoundsTrack(windowId, (boundsEvent) => {
+      // 通过 IPC 推送位置变化事件到渲染进程
+      webContents.send(IPC_CHANNELS.WINDOW_BOUNDS_CHANGE_PUSH, boundsEvent)
+    })
+  })
+
+  // 停止位置追踪
+  ipcMain.handle(IPC_CHANNELS.WINDOW_STOP_BOUNDS_TRACK, () => {
+    windowMonitor.stopBoundsTrack()
+  })
 
   // 创建主窗口
   createWindow()

@@ -17,7 +17,25 @@ export const IPC_CHANNELS = {
   STORE_GET: 'store:get',
   STORE_SET: 'store:set',
   STORE_DELETE: 'store:delete',
-  STORE_CLEAR: 'store:clear'
+  STORE_CLEAR: 'store:clear',
+
+  // ============ Window 监控 ============
+  /** 获取当前焦点窗口信息 */
+  WINDOW_GET_ACTIVE: 'window:get-active',
+  /** 获取所有运行中的应用列表（用于 UI 选择目标 App） */
+  WINDOW_GET_RUNNING_APPS: 'window:get-running-apps',
+  /** 开始监控焦点变化 */
+  WINDOW_START_FOCUS_WATCH: 'window:start-focus-watch',
+  /** 停止监控焦点变化 */
+  WINDOW_STOP_FOCUS_WATCH: 'window:stop-focus-watch',
+  /** 开始追踪目标窗口位置 */
+  WINDOW_START_BOUNDS_TRACK: 'window:start-bounds-track',
+  /** 停止追踪目标窗口位置 */
+  WINDOW_STOP_BOUNDS_TRACK: 'window:stop-bounds-track',
+  /** Main → Renderer: 焦点变化通知 */
+  WINDOW_FOCUS_CHANGE_PUSH: 'window:focus-change:push',
+  /** Main → Renderer: 目标窗口位置变化通知 */
+  WINDOW_BOUNDS_CHANGE_PUSH: 'window:bounds-change:push'
 
   // ============ Session 管理（Phase 2） ============
   // SESSION_START: 'session:start',

@@ -3,6 +3,88 @@
  * 供主进程和渲染进程共同使用
  */
 
+// ============ 窗口监控类型 ============
+
+/**
+ * 窗口边界信息
+ */
+export interface WindowBounds {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+/**
+ * 应用所有者信息
+ */
+export interface WindowOwner {
+  // 进程名称
+  name: string
+  // 进程 ID
+  processId: number
+  // Bundle ID (macOS) 或执行路径 (Windows)
+  bundleId?: string
+  // 可执行文件路径
+  path: string
+}
+
+/**
+ * 窗口信息（来自 active-win）
+ */
+export interface WindowInfo {
+  // 窗口标题
+  title: string
+  // 窗口 ID
+  id: number
+  // 窗口边界
+  bounds: WindowBounds
+  // 所属应用信息
+  owner: WindowOwner
+  // 内存使用（字节）
+  memoryUsage?: number
+}
+
+/**
+ * 运行中的应用信息（简化版，用于 UI 选择）
+ */
+export interface RunningApp {
+  // Bundle ID 或进程名
+  id: string
+  // 应用名称
+  name: string
+  // 进程 ID
+  processId: number
+  // 应用图标路径（可选）
+  iconPath?: string
+}
+
+/**
+ * 焦点变化事件
+ */
+export interface FocusChangeEvent {
+  // 前一个焦点窗口（可能为 null）
+  previous: WindowInfo | null
+  // 当前焦点窗口
+  current: WindowInfo
+  // 时间戳
+  timestamp: number
+}
+
+/**
+ * 窗口位置变化事件
+ */
+export interface BoundsChangeEvent {
+  // 窗口信息
+  window: WindowInfo
+  // 之前的边界
+  previousBounds: WindowBounds
+  // 当前边界
+  currentBounds: WindowBounds
+  // 时间戳
+  timestamp: number
+}
+
 // ============ Store API 类型 ============
 
 /**
