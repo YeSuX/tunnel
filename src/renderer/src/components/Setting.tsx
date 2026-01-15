@@ -1,9 +1,53 @@
 import { useStore } from '@renderer/hooks/useStore'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import type { WindowInfo, RunningApp, FocusChangeEvent } from '../../../shared/types'
+import { IPC_CHANNELS } from '../../../shared/ipc'
 
 export const Setting: React.FC = () => {
   const { settings, updateSettings } = useStore()
   const [newTimer, setNewTimer] = useState<string>('')
+
+  // ============ 窗口监控测试状态 ============
+  const [activeWindow, setActiveWindow] = useState<WindowInfo | null>(null)
+  const [runningApps, setRunningApps] = useState<RunningApp[]>([])
+  const [isFocusWatching, setIsFocusWatching] = useState(false)
+  const [focusHistory, setFocusHistory] = useState<string[]>([])
+
+  // 获取当前焦点窗口
+  const handleGetActiveWindow = async (): Promise<void> => {
+    const win = await window.api.window.getActive()
+    setActiveWindow(win)
+  }
+
+  // 获取运行中的应用
+  const handleGetRunningApps = async (): Promise<void> => {
+    const apps = await window.api.window.getRunningApps()
+    setRunningApps(apps)
+  }
+
+  // 切换焦点监控
+  const toggleFocusWatch = async (): Promise<void> => {
+    if (isFocusWatching) {
+      await window.api.window.stopFocusWatch()
+      setIsFocusWatching(false)
+    } else {
+      await window.api.window.startFocusWatch()
+      setIsFocusWatching(true)
+      setFocusHistory([])
+    }
+  }
+
+  // 订阅焦点变化事件
+  useEffect(() => {
+    const unsubscribe = window.api.on<FocusChangeEvent>(
+      IPC_CHANNELS.WINDOW_FOCUS_CHANGE_PUSH,
+      (event) => {
+        const log = `[${new Date().toLocaleTimeString()}] ${event.current.owner.name} - ${event.current.title}`
+        setFocusHistory((prev) => [log, ...prev].slice(0, 20))
+      }
+    )
+    return () => unsubscribe()
+  }, [])
 
   // 添加快速计时器
   const handleAddTimer = (): void => {
@@ -130,6 +174,121 @@ export const Setting: React.FC = () => {
           >
             添加
           </button>
+        </div>
+      </div>
+
+      {/* ============ 窗口监控测试区域 ============ */}
+      <div style={{ marginTop: '40px', borderTop: '2px solid #ddd', paddingTop: '20px' }}>
+        <h2>🧪 窗口监控测试</h2>
+
+        {/* 获取当前焦点窗口 */}
+        <div style={{ marginBottom: '24px' }}>
+          <button
+            onClick={handleGetActiveWindow}
+            style={{ padding: '8px 16px', cursor: 'pointer', marginRight: '8px' }}
+          >
+            获取当前焦点窗口
+          </button>
+          {activeWindow && (
+            <div
+              style={{
+                marginTop: '8px',
+                padding: '12px',
+                background: '#f5f5f5',
+                borderRadius: '4px',
+                fontSize: '13px'
+              }}
+            >
+              <div>
+                <strong>应用:</strong> {activeWindow.owner.name}
+              </div>
+              <div>
+                <strong>标题:</strong> {activeWindow.title}
+              </div>
+              <div>
+                <strong>窗口 ID:</strong> {activeWindow.id}
+              </div>
+              <div>
+                <strong>位置:</strong> x={activeWindow.bounds.x}, y={activeWindow.bounds.y}
+              </div>
+              <div>
+                <strong>尺寸:</strong> {activeWindow.bounds.width} × {activeWindow.bounds.height}
+              </div>
+              {activeWindow.owner.bundleId && (
+                <div>
+                  <strong>Bundle ID:</strong> {activeWindow.owner.bundleId}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* 获取运行中的应用 */}
+        <div style={{ marginBottom: '24px' }}>
+          <button onClick={handleGetRunningApps} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+            获取运行中的应用列表
+          </button>
+          {runningApps.length > 0 && (
+            <div
+              style={{
+                marginTop: '8px',
+                padding: '12px',
+                background: '#f5f5f5',
+                borderRadius: '4px',
+                maxHeight: '200px',
+                overflowY: 'auto'
+              }}
+            >
+              {runningApps.map((app) => (
+                <div key={app.processId} style={{ marginBottom: '4px', fontSize: '13px' }}>
+                  <strong>{app.name}</strong>
+                  <span style={{ color: '#666', marginLeft: '8px' }}>
+                    PID: {app.processId}
+                    {app.id && ` | ${app.id}`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 焦点监控 */}
+        <div style={{ marginBottom: '24px' }}>
+          <button
+            onClick={toggleFocusWatch}
+            style={{
+              padding: '8px 16px',
+              cursor: 'pointer',
+              background: isFocusWatching ? '#ff4444' : '#4CAF50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px'
+            }}
+          >
+            {isFocusWatching ? '⏹ 停止焦点监控' : '▶ 开始焦点监控'}
+          </button>
+          <span style={{ marginLeft: '12px', color: '#666', fontSize: '13px' }}>
+            {isFocusWatching ? '正在监控焦点变化...' : '点击开始后切换窗口查看效果'}
+          </span>
+          {focusHistory.length > 0 && (
+            <div
+              style={{
+                marginTop: '8px',
+                padding: '12px',
+                background: '#1e1e1e',
+                borderRadius: '4px',
+                maxHeight: '200px',
+                overflowY: 'auto',
+                fontFamily: 'monospace',
+                fontSize: '12px',
+                color: '#0f0'
+              }}
+            >
+              {focusHistory.map((log, i) => (
+                <div key={i}>{log}</div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
