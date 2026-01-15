@@ -13,9 +13,11 @@
  * - 需要 Accessibility 权限
  */
 
-import activeWin from 'active-win'
+import activeWindow from 'active-win'
 
-const { activeWindow, openWindows } = activeWin
+// active-win@8 API:
+// - 默认导出: activeWindow() - 获取当前焦点窗口
+// - activeWindow.getOpenWindows() - 获取所有打开的窗口
 
 // active-win@8 的结果类型
 type ActiveWinResult = Awaited<ReturnType<typeof activeWindow>>
@@ -124,7 +126,7 @@ export class WindowMonitor {
    */
   async getRunningApps(): Promise<RunningApp[]> {
     try {
-      const windows = await openWindows()
+      const windows = await activeWindow.getOpenWindows()
       if (!windows || windows.length === 0) return []
 
       // 按 processId 去重，构建应用列表
@@ -154,7 +156,7 @@ export class WindowMonitor {
    */
   async getAllWindows(): Promise<WindowInfo[]> {
     try {
-      const windows = await openWindows()
+      const windows = await activeWindow.getOpenWindows()
       if (!windows) return []
       return windows.map(toWindowInfo)
     } catch (error) {
@@ -170,7 +172,7 @@ export class WindowMonitor {
    */
   async getWindowById(windowId: number): Promise<WindowInfo | null> {
     try {
-      const windows = await openWindows()
+      const windows = await activeWindow.getOpenWindows()
       if (!windows) return null
       const target = windows.find((w) => w.id === windowId)
       return target ? toWindowInfo(target) : null
