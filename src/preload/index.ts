@@ -17,7 +17,13 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { IPC_CHANNELS } from '../shared/ipc'
-import type { StoreSchema, WindowInfo, RunningApp, PermissionStatus } from '../shared/types'
+import type {
+  StoreSchema,
+  WindowInfo,
+  WindowBounds,
+  RunningApp,
+  PermissionStatus
+} from '../shared/types'
 
 /**
  * 自定义 API 对象
@@ -74,6 +80,29 @@ const api = {
     /** 打开系统权限设置页面 */
     openPermissionSettings: (): Promise<void> =>
       ipcRenderer.invoke(IPC_CHANNELS.WINDOW_OPEN_PERMISSION_SETTINGS)
+  },
+
+  /**
+   * Overlay API - 遮罩层管理
+   */
+  overlay: {
+    /** 激活遮罩层 */
+    activate: (targetBounds: WindowBounds): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.OVERLAY_ACTIVATE, targetBounds),
+
+    /** 更新遮罩位置 */
+    update: (targetBounds: WindowBounds): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.OVERLAY_UPDATE, targetBounds),
+
+    /** 停用遮罩层 */
+    deactivate: (): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.OVERLAY_DEACTIVATE),
+
+    /** 获取遮罩状态 */
+    getStatus: (): Promise<{
+      initialized: boolean
+      active: boolean
+      targetBounds: WindowBounds | null
+    }> => ipcRenderer.invoke(IPC_CHANNELS.OVERLAY_GET_STATUS)
   },
 
   /**

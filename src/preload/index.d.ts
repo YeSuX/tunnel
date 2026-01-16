@@ -15,6 +15,7 @@ import { ElectronAPI } from '@electron-toolkit/preload'
 import type {
   TypedStoreAPI,
   WindowInfo,
+  WindowBounds,
   RunningApp,
   FocusChangeEvent,
   BoundsChangeEvent,
@@ -41,6 +42,24 @@ export interface WindowMonitorAPI {
   checkPermission: () => Promise<PermissionStatus>
   /** 打开系统权限设置页面 */
   openPermissionSettings: () => Promise<void>
+}
+
+/**
+ * Overlay API 类型 - 遮罩层管理
+ */
+export interface OverlayAPI {
+  /** 激活遮罩层 */
+  activate: (targetBounds: WindowBounds) => Promise<void>
+  /** 更新遮罩位置 */
+  update: (targetBounds: WindowBounds) => Promise<void>
+  /** 停用遮罩层 */
+  deactivate: () => Promise<void>
+  /** 获取遮罩状态 */
+  getStatus: () => Promise<{
+    initialized: boolean
+    active: boolean
+    targetBounds: WindowBounds | null
+  }>
 }
 
 /**
@@ -76,6 +95,11 @@ declare global {
        * Window Monitor API - 窗口监控功能
        */
       window: WindowMonitorAPI
+
+      /**
+       * Overlay API - 遮罩层管理
+       */
+      overlay: OverlayAPI
 
       /**
        * 订阅主进程推送的事件

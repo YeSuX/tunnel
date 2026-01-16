@@ -15,8 +15,9 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { store } from './store'
 import { IPC_CHANNELS } from '../shared/ipc'
-import type { StoreSchema } from '../shared/types'
+import type { StoreSchema, WindowBounds } from '../shared/types'
 import { windowMonitor } from './services/WindowMonitor'
+import { overlayManager } from './services/OverlayManager'
 
 // 禁用 Chromium 的 Autofill 功能，避免 DevTools 报错：
 // "Request Autofill.setAddresses failed"
@@ -46,7 +47,6 @@ function createWindow(): void {
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
   })
-
 
   // 处理窗口中打开新链接的行为
   // 将所有新窗口请求在系统默认浏览器中打开，而不是在应用内打开新窗口
@@ -163,6 +163,33 @@ app.whenReady().then(() => {
     }
   })
 
+  // ============ Overlay Manager IPC handlers ============
+
+  // 激活遮罩层
+  ipcMain.handle(IPC_CHANNELS.OVERLAY_ACTIVATE, (_event, targetBounds: WindowBounds) => {
+    overlayManager.activate(targetBounds)
+  })
+
+  // 更新遮罩位置
+  ipcMain.handle(IPC_CHANNELS.OVERLAY_UPDATE, (_event, targetBounds: WindowBounds) => {
+    overlayManager.updateOverlays(targetBounds)
+  })
+
+  // 停用遮罩层
+  ipcMain.handle(IPC_CHANNELS.OVERLAY_DEACTIVATE, () => {
+    overlayManager.deactivate()
+  })
+
+  // 获取遮罩状态
+  ipcMain.handle(IPC_CHANNELS.OVERLAY_GET_STATUS, () => {
+    return overlayManager.getStatus()
+  })
+
+  // 初始化 OverlayManager（预创建窗口池）
+  overlayManager.init().catch((err) => {
+    console.error('[Main] Failed to initialize OverlayManager:', err)
+  })
+
   // 创建主窗口
   createWindow()
 
@@ -188,6 +215,15 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+/**
+ * 应用即将退出事件处理
+ *
+ * 清理资源，销毁遮罩窗口
+ */
+app.on('before-quit', () => {
+  overlayManager.destroy()
 })
 
 /**

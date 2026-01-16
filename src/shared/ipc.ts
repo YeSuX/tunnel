@@ -39,7 +39,17 @@ export const IPC_CHANNELS = {
   /** 检查屏幕录制权限状态 */
   WINDOW_CHECK_PERMISSION: 'window:check-permission',
   /** 打开系统偏好设置（屏幕录制权限页面） */
-  WINDOW_OPEN_PERMISSION_SETTINGS: 'window:open-permission-settings'
+  WINDOW_OPEN_PERMISSION_SETTINGS: 'window:open-permission-settings',
+
+  // ============ Overlay 遮罩管理 ============
+  /** 激活遮罩层 */
+  OVERLAY_ACTIVATE: 'overlay:activate',
+  /** 更新遮罩位置 */
+  OVERLAY_UPDATE: 'overlay:update',
+  /** 停用遮罩层 */
+  OVERLAY_DEACTIVATE: 'overlay:deactivate',
+  /** 获取遮罩状态 */
+  OVERLAY_GET_STATUS: 'overlay:get-status'
 
   // ============ Session 管理（Phase 2） ============
   // SESSION_START: 'session:start',
