@@ -26,10 +26,10 @@
 
 目标：攻克最难的技术点。如果这部分做不到“无缝”，UI 再漂亮也没用。**这是 MVP 的生死线。**
 
-- [ ] **Window Detection (Sensing)**
-  - [ ] 集成 `active-win` 或原生 macOS API。
-  - [ ] 实现 `WindowMonitor` 服务：每秒轮询或监听系统事件，获取当前激活窗口的 PID 和 Bounds (坐标/尺寸)。
-  - [ ] **技术难点验证**：确保获取窗口信息的延迟 < 100ms。
+- [x] **Window Detection (Sensing)**
+  - [x] 集成 `active-win` 或原生 macOS API。
+  - [x] 实现 `WindowMonitor` 服务：每秒轮询或监听系统事件，获取当前激活窗口的 PID 和 Bounds (坐标/尺寸)。
+  - [x] **技术难点验证**：确保获取窗口信息的延迟 < 100ms。
 - [ ] **The "Blackout" Overlay (Visual Deprivation)**
   - [ ] 实现全屏透明/点击穿透窗口 (`BrowserWindow` setIgnoreMouseEvents).
   - [ ] **渲染策略**：
