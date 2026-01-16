@@ -17,7 +17,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { IPC_CHANNELS } from '../shared/ipc'
-import type { StoreSchema, WindowInfo, RunningApp } from '../shared/types'
+import type { StoreSchema, WindowInfo, RunningApp, PermissionStatus } from '../shared/types'
 
 /**
  * 自定义 API 对象
@@ -65,7 +65,15 @@ const api = {
       ipcRenderer.invoke(IPC_CHANNELS.WINDOW_START_BOUNDS_TRACK, windowId),
 
     /** 停止位置追踪 */
-    stopBoundsTrack: (): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_STOP_BOUNDS_TRACK)
+    stopBoundsTrack: (): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_STOP_BOUNDS_TRACK),
+
+    /** 检查屏幕录制权限状态 */
+    checkPermission: (): Promise<PermissionStatus> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WINDOW_CHECK_PERMISSION),
+
+    /** 打开系统权限设置页面 */
+    openPermissionSettings: (): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.WINDOW_OPEN_PERMISSION_SETTINGS)
   },
 
   /**

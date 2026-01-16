@@ -35,7 +35,11 @@ export const IPC_CHANNELS = {
   /** Main → Renderer: 焦点变化通知 */
   WINDOW_FOCUS_CHANGE_PUSH: 'window:focus-change:push',
   /** Main → Renderer: 目标窗口位置变化通知 */
-  WINDOW_BOUNDS_CHANGE_PUSH: 'window:bounds-change:push'
+  WINDOW_BOUNDS_CHANGE_PUSH: 'window:bounds-change:push',
+  /** 检查屏幕录制权限状态 */
+  WINDOW_CHECK_PERMISSION: 'window:check-permission',
+  /** 打开系统偏好设置（屏幕录制权限页面） */
+  WINDOW_OPEN_PERMISSION_SETTINGS: 'window:open-permission-settings'
 
   // ============ Session 管理（Phase 2） ============
   // SESSION_START: 'session:start',

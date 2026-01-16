@@ -17,7 +17,8 @@ import type {
   WindowInfo,
   RunningApp,
   FocusChangeEvent,
-  BoundsChangeEvent
+  BoundsChangeEvent,
+  PermissionStatus
 } from '../shared/types'
 
 /**
@@ -36,6 +37,10 @@ export interface WindowMonitorAPI {
   startBoundsTrack: (windowId: number) => Promise<void>
   /** 停止位置追踪 */
   stopBoundsTrack: () => Promise<void>
+  /** 检查屏幕录制权限状态 */
+  checkPermission: () => Promise<PermissionStatus>
+  /** 打开系统权限设置页面 */
+  openPermissionSettings: () => Promise<void>
 }
 
 /**

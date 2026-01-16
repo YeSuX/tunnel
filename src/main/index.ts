@@ -142,6 +142,22 @@ app.whenReady().then(() => {
     windowMonitor.stopBoundsTrack()
   })
 
+  // 检查屏幕录制权限
+  ipcMain.handle(IPC_CHANNELS.WINDOW_CHECK_PERMISSION, () => windowMonitor.checkPermission())
+
+  // 打开系统偏好设置（屏幕录制权限页面）
+  ipcMain.handle(IPC_CHANNELS.WINDOW_OPEN_PERMISSION_SETTINGS, () => {
+    if (process.platform === 'darwin') {
+      // macOS：打开屏幕录制权限设置页面
+      shell.openExternal(
+        'x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture'
+      )
+    } else if (process.platform === 'win32') {
+      // Windows：打开隐私设置
+      shell.openExternal('ms-settings:privacy')
+    }
+  })
+
   // 创建主窗口
   createWindow()
 

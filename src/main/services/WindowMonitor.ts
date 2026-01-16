@@ -26,7 +26,9 @@ import type {
   WindowBounds,
   RunningApp,
   FocusChangeEvent,
-  BoundsChangeEvent
+  BoundsChangeEvent,
+  PermissionStatus,
+  ScreenRecordingPermission
 } from '../../shared/types'
 
 // ============ 配置常量 ============
@@ -42,6 +44,9 @@ const BOUNDS_POLL_INTERVAL_FAST = 50
 
 /** 快速轮询持续时间（ms） */
 const FAST_POLL_DURATION = 2000
+
+/** 屏幕录制权限错误关键词 */
+const SCREEN_RECORDING_PERMISSION_ERROR = 'screen recording permission'
 
 // ============ 类型转换工具 ============
 
@@ -82,6 +87,9 @@ export class WindowMonitor {
   /** 上一次检测到的焦点窗口 */
   private lastFocusedWindow: WindowInfo | null = null
 
+  /** 缓存的权限状态（避免重复检测） */
+  private cachedPermission: ScreenRecordingPermission = 'unknown'
+
   /** 正在追踪的目标窗口 ID */
   private trackedWindowId: number | null = null
 
@@ -103,6 +111,54 @@ export class WindowMonitor {
   // ============ 公开 API ============
 
   /**
+   * 检查屏幕录制权限状态
+   *
+   * 通过实际调用 active-win 来检测权限，而非依赖系统 API，
+   * 因为 active-win 的权限要求可能与系统 API 检测不完全一致。
+   */
+  async checkPermission(): Promise<PermissionStatus> {
+    // 如果已知权限状态为 granted，直接返回
+    if (this.cachedPermission === 'granted') {
+      return { screenRecording: 'granted' }
+    }
+
+    try {
+      await activeWindow()
+      this.cachedPermission = 'granted'
+      return { screenRecording: 'granted' }
+    } catch (error) {
+      if (this.isPermissionError(error)) {
+        this.cachedPermission = 'denied'
+        return {
+          screenRecording: 'denied',
+          message:
+            '需要屏幕录制权限才能获取窗口信息。请在「系统设置 › 隐私与安全性 › 屏幕录制」中授权本应用。'
+        }
+      }
+      // 其他错误，权限状态未知
+      return { screenRecording: 'unknown', message: '无法确定权限状态' }
+    }
+  }
+
+  /**
+   * 判断错误是否为屏幕录制权限错误
+   */
+  private isPermissionError(error: unknown): boolean {
+    if (error instanceof Error) {
+      // 检查 error message
+      if (error.message.toLowerCase().includes(SCREEN_RECORDING_PERMISSION_ERROR)) {
+        return true
+      }
+      // 检查 stdout（active-win 错误信息通常在 stdout 中）
+      const errorWithStdout = error as Error & { stdout?: string }
+      if (errorWithStdout.stdout?.toLowerCase().includes(SCREEN_RECORDING_PERMISSION_ERROR)) {
+        return true
+      }
+    }
+    return false
+  }
+
+  /**
    * 获取当前焦点窗口信息
    *
    * @returns 窗口信息，若无法获取则返回 null
@@ -111,9 +167,18 @@ export class WindowMonitor {
     try {
       const result = await activeWindow()
       if (!result) return null
+      // 成功获取窗口信息，更新权限缓存
+      this.cachedPermission = 'granted'
       return toWindowInfo(result)
     } catch (error) {
-      console.error('[WindowMonitor] getActiveWindow failed:', error)
+      if (this.isPermissionError(error)) {
+        this.cachedPermission = 'denied'
+        console.warn(
+          '[WindowMonitor] 缺少屏幕录制权限。请在「系统设置 › 隐私与安全性 › 屏幕录制」中授权。'
+        )
+      } else {
+        console.error('[WindowMonitor] getActiveWindow failed:', error)
+      }
       return null
     }
   }

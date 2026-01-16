@@ -3,6 +3,22 @@
  * 供主进程和渲染进程共同使用
  */
 
+// ============ 权限状态类型 ============
+
+/**
+ * 屏幕录制权限状态
+ */
+export type ScreenRecordingPermission = 'granted' | 'denied' | 'unknown'
+
+/**
+ * 权限检查结果
+ */
+export interface PermissionStatus {
+  screenRecording: ScreenRecordingPermission
+  // 用户友好的提示信息
+  message?: string
+}
+
 // ============ 窗口监控类型 ============
 
 /**
