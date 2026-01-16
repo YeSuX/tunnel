@@ -18,6 +18,10 @@ import { IPC_CHANNELS } from '../shared/ipc'
 import type { StoreSchema } from '../shared/types'
 import { windowMonitor } from './services/WindowMonitor'
 
+// 禁用 Chromium 的 Autofill 功能，避免 DevTools 报错：
+// "Request Autofill.setAddresses failed"
+app.commandLine.appendSwitch('disable-features', 'AutofillServerCommunication')
+
 /**
  * 创建主窗口
  *
@@ -42,6 +46,7 @@ function createWindow(): void {
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
   })
+
 
   // 处理窗口中打开新链接的行为
   // 将所有新窗口请求在系统默认浏览器中打开，而不是在应用内打开新窗口

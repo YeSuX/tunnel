@@ -55,21 +55,21 @@ const SCREEN_RECORDING_PERMISSION_ERROR = 'screen recording permission'
  */
 function toWindowInfo(result: ActiveWinResult): WindowInfo {
   return {
-    title: result.title,
-    id: result.id,
+    title: result?.title || '',
+    id: result?.id || 0,
     bounds: {
-      x: result.bounds.x,
-      y: result.bounds.y,
-      width: result.bounds.width,
-      height: result.bounds.height
+      x: result?.bounds.x || 0,
+      y: result?.bounds.y || 0,
+      width: result?.bounds.width || 0,
+      height: result?.bounds.height || 0
     },
     owner: {
-      name: result.owner.name,
-      processId: result.owner.processId,
-      bundleId: result.platform === 'macos' ? result.owner.bundleId : undefined,
-      path: result.owner.path
+      name: result?.owner.name || '',
+      processId: result?.owner.processId || 0,
+      bundleId: result?.platform === 'macos' ? result?.owner.bundleId : undefined,
+      path: result?.owner.path || ''
     },
-    memoryUsage: result.memoryUsage
+    memoryUsage: result?.memoryUsage || 0
   }
 }
 
@@ -113,8 +113,9 @@ export class WindowMonitor {
   /**
    * 检查屏幕录制权限状态
    *
-   * 通过实际调用 active-win 来检测权限，而非依赖系统 API，
-   * 因为 active-win 的权限要求可能与系统 API 检测不完全一致。
+   * 通过实际调用 active-win 的 getOpenWindows 来检测权限，
+   * 因为它比 activeWindow() 需要更严格的屏幕录制权限。
+   * 这样可以确保权限检测通过后，所有 API 都能正常工作。
    */
   async checkPermission(): Promise<PermissionStatus> {
     // 如果已知权限状态为 granted，直接返回
@@ -123,7 +124,8 @@ export class WindowMonitor {
     }
 
     try {
-      await activeWindow()
+      // 使用 getOpenWindows 检测，它需要完整的屏幕录制权限
+      await activeWindow.getOpenWindows()
       this.cachedPermission = 'granted'
       return { screenRecording: 'granted' }
     } catch (error) {
@@ -161,18 +163,18 @@ export class WindowMonitor {
   /**
    * 获取当前焦点窗口信息
    *
+   * 注意：此方法使用 activeWindow()，它的权限要求比 getOpenWindows() 低，
+   * 因此不更新 cachedPermission，避免误导 checkPermission() 的检测结果。
+   *
    * @returns 窗口信息，若无法获取则返回 null
    */
   async getActiveWindow(): Promise<WindowInfo | null> {
     try {
       const result = await activeWindow()
       if (!result) return null
-      // 成功获取窗口信息，更新权限缓存
-      this.cachedPermission = 'granted'
       return toWindowInfo(result)
     } catch (error) {
       if (this.isPermissionError(error)) {
-        this.cachedPermission = 'denied'
         console.warn(
           '[WindowMonitor] 缺少屏幕录制权限。请在「系统设置 › 隐私与安全性 › 屏幕录制」中授权。'
         )
@@ -194,6 +196,9 @@ export class WindowMonitor {
       const windows = await activeWindow.getOpenWindows()
       if (!windows || windows.length === 0) return []
 
+      // 成功获取窗口信息，更新权限缓存
+      this.cachedPermission = 'granted'
+
       // 按 processId 去重，构建应用列表
       const appMap = new Map<number, RunningApp>()
 
@@ -209,7 +214,14 @@ export class WindowMonitor {
 
       return Array.from(appMap.values())
     } catch (error) {
-      console.error('[WindowMonitor] getRunningApps failed:', error)
+      if (this.isPermissionError(error)) {
+        this.cachedPermission = 'denied'
+        console.warn(
+          '[WindowMonitor] 缺少屏幕录制权限。请在「系统设置 › 隐私与安全性 › 屏幕录制」中授权。'
+        )
+      } else {
+        console.error('[WindowMonitor] getRunningApps failed:', error)
+      }
       return []
     }
   }
@@ -223,9 +235,18 @@ export class WindowMonitor {
     try {
       const windows = await activeWindow.getOpenWindows()
       if (!windows) return []
+      // 成功获取窗口信息，更新权限缓存
+      this.cachedPermission = 'granted'
       return windows.map(toWindowInfo)
     } catch (error) {
-      console.error('[WindowMonitor] getAllWindows failed:', error)
+      if (this.isPermissionError(error)) {
+        this.cachedPermission = 'denied'
+        console.warn(
+          '[WindowMonitor] 缺少屏幕录制权限。请在「系统设置 › 隐私与安全性 › 屏幕录制」中授权。'
+        )
+      } else {
+        console.error('[WindowMonitor] getAllWindows failed:', error)
+      }
       return []
     }
   }
@@ -239,10 +260,19 @@ export class WindowMonitor {
     try {
       const windows = await activeWindow.getOpenWindows()
       if (!windows) return null
+      // 成功获取窗口信息，更新权限缓存
+      this.cachedPermission = 'granted'
       const target = windows.find((w) => w.id === windowId)
       return target ? toWindowInfo(target) : null
     } catch (error) {
-      console.error('[WindowMonitor] getWindowById failed:', error)
+      if (this.isPermissionError(error)) {
+        this.cachedPermission = 'denied'
+        console.warn(
+          '[WindowMonitor] 缺少屏幕录制权限。请在「系统设置 › 隐私与安全性 › 屏幕录制」中授权。'
+        )
+      } else {
+        console.error('[WindowMonitor] getWindowById failed:', error)
+      }
       return null
     }
   }
