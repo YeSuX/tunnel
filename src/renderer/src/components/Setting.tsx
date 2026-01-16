@@ -70,7 +70,7 @@ export const Setting: React.FC = () => {
   }
 
   return (
-    <div style={{ padding: '20px', maxWidth: '600px' }}>
+    <div style={{ padding: '20px', maxWidth: '600px', height: '100vh', overflow: 'auto' }}>
       <h2>设置</h2>
 
       {/* 严格模式 */}
@@ -132,7 +132,6 @@ export const Setting: React.FC = () => {
               key={timer}
               style={{
                 padding: '4px 8px',
-                background: '#f0f0f0',
                 borderRadius: '4px',
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -194,7 +193,6 @@ export const Setting: React.FC = () => {
               style={{
                 marginTop: '8px',
                 padding: '12px',
-                background: '#f5f5f5',
                 borderRadius: '4px',
                 fontSize: '13px'
               }}
